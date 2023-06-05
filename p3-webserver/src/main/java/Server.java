@@ -1,33 +1,47 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.Semaphore;
 
 public class Server {
+  private boolean serviceRequested;
+  public final int serverPort;
 
-  private boolean active;
+  public Server(int serverPort) {
+        serviceRequested = true;
+        this.serverPort = serverPort;
+
+    }
 
   public static void main(String[] args) {
-    Server server = new Server();
-    server.start();
+    Server server = new Server(6001);
+    server.startServer();
   }
 
-  public Server() {
-    active = true;
-  }
+  public void startServer() {
+      ServerSocket welcomeSocket; // TCP-Server-Socketklasse
+      Socket connectionSocket; // TCP-Standard-Socketklasse
 
-  public void start() {
-    try {
-      ServerSocket serverSocket = new ServerSocket(42069);
-      while (active) {
-        Socket connectionSocket = serverSocket.accept();
-        System.err.println("========================");
-        System.err.println("New Client");
-        System.err.println("========================\n");
+      int nextThreadNumber = 0;
 
-        new Worker(connectionSocket, this).start();
+      try {
+          /* Server-Socket erzeugen */
+          System.err.println("Creating new TCP Server Socket Port " + serverPort);
+          welcomeSocket = new ServerSocket(serverPort);
+
+          while (serviceRequested) {
+              System.err.println("TCP Server is waiting for connection - listening TCP port " + serverPort);
+              /*
+               * Blockiert auf Verbindungsanfrage warten --> nach Verbindungsaufbau
+               * Standard-Socket erzeugen und an connectionSocket zuweisen
+               */
+              connectionSocket = welcomeSocket.accept();
+
+              /* Neuen Arbeits-Thread erzeugen und die Nummer, den Socket sowie das Serverobjekt uebergeben */
+              (new Worker(connectionSocket, this)).start();
+          }
+      } catch (Exception e) {
+          System.err.println(e.getMessage());
       }
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 }

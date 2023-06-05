@@ -67,7 +67,7 @@ public class Worker extends Thread {
           withStatusCode("200 OK");
           withContentType(filePath);
           withFilePayload(
-              currentWorkingDir + "\\p3-webserver\\src\\main\\resources\\assets\\" + filePath);
+                  currentWorkingDir + "\\p3-webserver\\src\\main\\resources\\assets\\" + filePath);
         }
         stopConnection();
       }
