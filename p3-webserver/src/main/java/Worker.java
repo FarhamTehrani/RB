@@ -12,28 +12,26 @@ import java.nio.file.Paths;
 
 public class Worker extends Thread {
 
-  private final Socket socket;
+  private final Socket sock;
   private final Server server;
   private final String CRLF = "\r\n";
   private BufferedReader inFromClient;
   private DataOutputStream outToClient;
   RestController restController;
 
-
-  public Worker(Socket socket, Server server) {
+  public Worker(Socket sock, Server server) {
     this.server = server;
-    this.socket = socket;
+    this.sock = sock;
     restController = new RestController();
   }
-
   @Override
   public void run() {
     try {
-      inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-      outToClient = new DataOutputStream(socket.getOutputStream());
+      inFromClient = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+      outToClient = new DataOutputStream(sock.getOutputStream());
       String line;
       String filePath = "";
-      while (!socket.isClosed()) {
+      while (!sock.isClosed()) {
         while ((line = inFromClient.readLine()) != null && !line.isEmpty()) {
           System.err.println(line);
           isFirefox(line);
@@ -79,7 +77,6 @@ public class Worker extends Thread {
     }
     return path.substring(1);
   }
-
   private boolean isFirefox(String line) throws IOException {
     String filePath = getFilePath(line);
     if(filePath.equals("date") || filePath.equals("time")){
@@ -95,11 +92,10 @@ public class Worker extends Thread {
     stopConnection();
     return false;
   }
-
   private void write(String message) {
     try {
       outToClient.flush();
-      if (!socket.isClosed()) {
+      if (!sock.isClosed()) {
         outToClient.writeBytes(message + CRLF);
       } else {
         inFromClient.close();
@@ -109,11 +105,9 @@ public class Worker extends Thread {
       System.err.println(e.getMessage());
     }
   }
-
   private void writeStatusCode(String statusCode) {
     write("HTTP/1.0 " + statusCode);
   }
-
   private void writeContentType(String filePath) {
     String fileType = filePath.substring(filePath.indexOf("."));
     String contentType = switch (fileType) {
@@ -125,15 +119,12 @@ public class Worker extends Thread {
     };
     write("Content-Type: " + contentType);
   }
-
-  private void writeContentLength(long contentLength) {
-    write("Content-Length: " + contentLength);
+  private void writeContentLength(long cLength) {
+    write("Content-Length: " + cLength);
   }
-
-  private void writeConnectionType(String connectionType) {
-    write("Connection: " + connectionType);
+  private void writeConnectionType(String cType) {
+    write("Connection: " + cType);
   }
-
   private void writeToClient(String line) throws IOException {
     outToClient.write((line + CRLF).getBytes());
     long contentLength = line.getBytes().length;
@@ -166,7 +157,7 @@ public class Worker extends Thread {
   }
   private void stopConnection() {
     try {
-      socket.close();
+      sock.close();
     } catch (IOException e) {
       System.err.println(e.getMessage());
     }
