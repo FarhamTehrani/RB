@@ -35,7 +35,6 @@ public class Worker extends Thread {
         while ((line = inFromClient.readLine()) != null && !line.isEmpty()) {
           System.err.println(line);
           isFirefox(line);
-
           if (line.toLowerCase().contains("get")) {
             filePath = getFilePath(line);
           }
@@ -54,18 +53,15 @@ public class Worker extends Thread {
             filePath = "/index.html";
           }
           Path currentWorkingDir = Paths.get("").toAbsolutePath();
-
           writeStatusCode("200 OK");
           writeContentType(filePath);
-          writeFileContent(
-                  currentWorkingDir + "\\p3-webserver\\src\\main\\resources\\assets\\" + filePath);
+          writeFileContent(currentWorkingDir + "\\p3-webserver\\src\\main\\resources\\assets\\" + filePath);
         }
         stopConnection();
       }
     } catch (IOException e) {
       System.err.println(e.getMessage());
-    }
-  }
+    }}
   private String getFilePath(String request) {
     String path = request.split(" ")[1];
     try {
@@ -134,27 +130,21 @@ public class Worker extends Thread {
     write("");
   }
 
-  private void writeFileContent(String path) {
-    File file = new File(path);
-
-    try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
-      outToClient.flush();
-
-      writeContentLength(Files.size(Path.of(path)));
-      write("");
-
-      byte[] dataBuffer = new byte[1024];
-      int bytesRead;
-      while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
-        outToClient.write(dataBuffer, 0, bytesRead);
-      }
-      inFromClient.close();
-      outToClient.close();
-
-    } catch (IOException e) {
-      System.err.println(e.getMessage());
+  private void writeFileContent(String path) throws IOException {
+    File fileIn = new File(path);
+    BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileIn));
+    outToClient.flush();
+    writeContentLength(Files.size(Path.of(path)));
+    write("");
+    byte[] dataBuffer = new byte[1024];
+    int bytesRead;
+    while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+      outToClient.write(dataBuffer, 0, bytesRead);
     }
+    inFromClient.close();
+    outToClient.close();
   }
+
   private void stopConnection() {
     try {
       sock.close();
