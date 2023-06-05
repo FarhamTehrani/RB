@@ -31,7 +31,7 @@ public class Server {
               connectionSocket = welcomeSocket.accept();
 
               /* Neuen Arbeits-Thread erzeugen und die Nummer, den Socket sowie das Serverobjekt uebergeben */
-              (new Worker(connectionSocket, this)).start();
+              (new WorkerThread(connectionSocket, this)).start();
           }} catch (Exception e) {
           System.err.println(e.getMessage());
       }
