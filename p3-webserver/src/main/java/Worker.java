@@ -15,31 +15,27 @@ import java.time.format.DateTimeFormatter;
 
 public class Worker extends Thread {
 
-  private Socket socket;
-  private Server server;
-
-  private BufferedReader input;
-  private DataOutputStream output;
+  private final Socket socket;
+  private final Server server;
   private final String CRLF = "\r\n";
+  private BufferedReader inFromClient;
+  private DataOutputStream outToClient;
+
 
   public Worker(Socket socket, Server server) {
-    this.socket = socket;
     this.server = server;
+    this.socket = socket;
   }
 
   @Override
   public void run() {
-    begin();
-  }
-
-  private void begin() {
     try {
-      input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-      output = new DataOutputStream(socket.getOutputStream());
+      inFromClient = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+      outToClient = new DataOutputStream(socket.getOutputStream());
       String line;
       String filePath = "";
       while (!socket.isClosed()) {
-        while ((line = input.readLine()) != null && !line.isEmpty()) {
+        while ((line = inFromClient.readLine()) != null && !line.isEmpty()) {
           System.err.println(line);
           validateLine(line);
 
@@ -50,13 +46,13 @@ public class Worker extends Thread {
         System.err.println(filePath);
         if (filePath.equals("time")) {
           DateTimeFormatter format = DateTimeFormatter.ofPattern("HH:mm:ss");
-          withStatusCode("200 OK");
-          withContentType(".txt");
+          writeStatusCode("200 OK");
+          writeContentType(".txt");
           withPayload(LocalTime.now().format(format));
         } else if (filePath.equals("date")) {
           DateTimeFormatter format = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-          withStatusCode("200 OK");
-          withContentType(".txt");
+          writeStatusCode("200 OK");
+          writeContentType(".txt");
           withPayload(LocalDate.now().format(format));
         } else {
           if (filePath.isEmpty()) {
@@ -64,8 +60,8 @@ public class Worker extends Thread {
           }
           Path currentWorkingDir = Paths.get("").toAbsolutePath();
 
-          withStatusCode("200 OK");
-          withContentType(filePath);
+          writeStatusCode("200 OK");
+          writeContentType(filePath);
           withFilePayload(
                   currentWorkingDir + "\\p3-webserver\\src\\main\\resources\\assets\\" + filePath);
         }
@@ -75,7 +71,6 @@ public class Worker extends Thread {
       e.printStackTrace();
     }
   }
-
   private String getFilePath(String request) {
     String path = request.split(" ")[1];
     try {
@@ -92,8 +87,8 @@ public class Worker extends Thread {
     if (!line.toLowerCase().contains("user-agent") || line.toLowerCase().contains("firefox")) {
       return true;
     }
-    withStatusCode("406");
-    withContentType(".txt");
+    writeStatusCode("406");
+    writeContentType(".txt");
     withConnection("keep-alive");
     withPayload("406 Not Acceptable, only Firefox is allowed");
     stopConnection();
@@ -102,23 +97,23 @@ public class Worker extends Thread {
 
   private void write(String message) {
     try {
-      output.flush();
+      outToClient.flush();
       if (!socket.isClosed()) {
-        output.writeBytes(message + CRLF);
+        outToClient.writeBytes(message + CRLF);
       } else {
-        input.close();
-        output.close();
+        inFromClient.close();
+        outToClient.close();
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  private void withStatusCode(String statusCode) {
+  private void writeStatusCode(String statusCode) {
     write("HTTP/1.0 " + statusCode);
   }
 
-  private void withContentType(String filePath) {
+  private void writeContentType(String filePath) {
     String fileType = filePath.substring(filePath.indexOf("."));
     String contentType = switch (fileType) {
       case ".gif" -> "image/gif";
@@ -142,34 +137,34 @@ public class Worker extends Thread {
   private void withPayload(String payload) {
     long contentLength = payload.getBytes().length;
     withContentLength(contentLength);
-    withCRLF();
+    writeCRLF();
     write(payload);
-    withCRLF();
+    writeCRLF();
   }
 
   private void withFilePayload(String path) {
     File file = new File(path);
 
     try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
-      output.flush();
+      outToClient.flush();
 
       withContentLength(Files.size(Path.of(path)));
-      withCRLF();
+      writeCRLF();
 
       byte[] dataBuffer = new byte[1024];
       int bytesRead;
       while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
-        output.write(dataBuffer, 0, bytesRead);
+        outToClient.write(dataBuffer, 0, bytesRead);
       }
-      input.close();
-      output.close();
+      inFromClient.close();
+      outToClient.close();
 
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  private void withCRLF() {
+  private void writeCRLF() {
     write("");
   }
 
@@ -177,8 +172,7 @@ public class Worker extends Thread {
     try {
       socket.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      System.err.println(e.getMessage());
     }
-    //interrupt();
   }
 }

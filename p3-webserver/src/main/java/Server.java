@@ -6,10 +6,12 @@ public class Server {
   public final int serverPort;
   public Server(int serverPort) {
         serviceRequested = true;
-        this.serverPort = serverPort;}
+        this.serverPort = serverPort;
+  }
   public static void main(String[] args) {
       Server server = new Server(6001);
-      server.startServer();}
+      server.startServer();
+  }
   public void startServer() {
       ServerSocket welcomeSocket; // TCP-Server-Socketklasse
       Socket connectionSocket; // TCP-Standard-Socketklasse
@@ -32,4 +34,6 @@ public class Server {
               (new Worker(connectionSocket, this)).start();
           }} catch (Exception e) {
           System.err.println(e.getMessage());
-      }}}
+      }
+  }
+}
