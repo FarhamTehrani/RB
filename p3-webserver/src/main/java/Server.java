@@ -1,30 +1,21 @@
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.Semaphore;
 
 public class Server {
   private boolean serviceRequested;
   public final int serverPort;
-
   public Server(int serverPort) {
         serviceRequested = true;
-        this.serverPort = serverPort;
-
-    }
-
+        this.serverPort = serverPort;}
   public static void main(String[] args) {
-    Server server = new Server(6001);
-    server.startServer();
-  }
-
+      Server server = new Server(6001);
+      server.startServer();}
   public void startServer() {
       ServerSocket welcomeSocket; // TCP-Server-Socketklasse
       Socket connectionSocket; // TCP-Standard-Socketklasse
 
       int nextThreadNumber = 0;
-
-      try {
+      try{
           /* Server-Socket erzeugen */
           System.err.println("Creating new TCP Server Socket Port " + serverPort);
           welcomeSocket = new ServerSocket(serverPort);
@@ -39,9 +30,6 @@ public class Server {
 
               /* Neuen Arbeits-Thread erzeugen und die Nummer, den Socket sowie das Serverobjekt uebergeben */
               (new Worker(connectionSocket, this)).start();
-          }
-      } catch (Exception e) {
+          }} catch (Exception e) {
           System.err.println(e.getMessage());
-      }
-  }
-}
+      }}}
